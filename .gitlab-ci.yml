@@ -1,0 +1,71 @@
+stages:
+  - build
+  - style
+  - test
+  - deploy
+
+building:
+  stage: build
+  tags:
+    - build
+
+  script:
+    - cd src/cat
+    - make s21_cat
+    - cd ../grep
+    - make s21_grep
+
+  artifacts:
+
+    paths:
+      - src/cat/s21_cat
+      - src/grep/s21_grep
+
+    expire_in: 30 days
+
+  after_script:
+    - sh src/notify.sh "build"
+
+codestyle:
+  stage: style  
+  tags: 
+    - style
+
+  before_script:
+    - echo "Codestyle job started"
+
+  script:
+    - cd src/cat
+    - make style
+    - cd ../grep
+    - make style
+
+  after_script:
+    - echo "Codestyle job finished"
+    - sh src/notify.sh "style"
+
+test_code:
+  stage: test
+  tags:
+    - test
+
+  script:
+    - cd src/cat
+    - make test
+    - cd ../grep/tests
+    - bash run_tests.sh
+
+  when: on_success
+
+  after_script:
+    - sh src/notify.sh "test"
+
+deploy:
+  stage: deploy
+  tags:
+    - deploy
+  script:
+    - bash src/deploy.sh
+  when: manual
+  after_script:
+    - sh src/notify.sh "deploy"
